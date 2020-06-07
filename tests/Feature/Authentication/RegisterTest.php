@@ -1,6 +1,6 @@
 <?php
 
-namespace Tests\Feature\Auth;
+namespace Tests\Feature\Authentication;
 
 use Tests\TestCase;
 use App\Models\User;
@@ -14,23 +14,14 @@ class RegisterTest extends TestCase
 {
     use RefreshDatabase;
 
+    public const PASSWORD = 'makers-assemble';
+
     /** @test */
     public function a_guest_can_view_the_registration_page()
     {
-        $response = $this->get(route('register'));
-
-        $response->assertSuccessful();
-        $response->assertViewIs('auth.register');
-    }
-
-    /** @test */
-    public function a_user_cannot_view_the_registration_page()
-    {
-        $user = factory(User::class)->make();
-
-        $response = $this->actingAs($user)->get(route('register'));
-
-        $response->assertRedirect(RouteServiceProvider::HOME);
+        $this->get(route('register'))
+            ->assertSuccessful()
+            ->assertViewIs('auth.register');
     }
 
     /** @test */
@@ -38,19 +29,18 @@ class RegisterTest extends TestCase
     {
         Event::fake();
 
-        $response = $this->post(route('register'), [
+        $this->post(route('register'), [
             'name' => 'John Doe',
             'email' => 'john@example.com',
-            'password' => 'i-love-laravel',
-            'password_confirmation' => 'i-love-laravel',
-        ]);
-
-        $response->assertRedirect(RouteServiceProvider::HOME);
+            'password' => self::PASSWORD,
+            'password_confirmation' => self::PASSWORD,
+        ])
+            ->assertRedirect(RouteServiceProvider::HOME);
         $this->assertCount(1, $users = User::all());
         $this->assertAuthenticatedAs($user = $users->first());
         $this->assertEquals('John Doe', $user->name);
         $this->assertEquals('john@example.com', $user->email);
-        $this->assertTrue(Hash::check('i-love-laravel', $user->password));
+        $this->assertTrue(Hash::check(self::PASSWORD, $user->password));
         Event::assertDispatched(Registered::class, function ($e) use ($user) {
             return $e->user->id === $user->id;
         });
@@ -62,8 +52,8 @@ class RegisterTest extends TestCase
         $response = $this->from(route('register'))->post(route('register'), [
             'name' => '',
             'email' => 'john@example.com',
-            'password' => 'i-love-laravel',
-            'password_confirmation' => 'i-love-laravel',
+            'password' => self::PASSWORD,
+            'password_confirmation' => self::PASSWORD,
         ]);
 
         $users = User::all();
@@ -82,8 +72,8 @@ class RegisterTest extends TestCase
         $response = $this->from(route('register'))->post(route('register'), [
             'name' => 'John Doe',
             'email' => '',
-            'password' => 'i-love-laravel',
-            'password_confirmation' => 'i-love-laravel',
+            'password' => self::PASSWORD,
+            'password_confirmation' => self::PASSWORD,
         ]);
 
         $users = User::all();
@@ -102,8 +92,8 @@ class RegisterTest extends TestCase
         $response = $this->from(route('register'))->post(route('register'), [
             'name' => 'John Doe',
             'email' => 'invalid-email',
-            'password' => 'i-love-laravel',
-            'password_confirmation' => 'i-love-laravel',
+            'password' => self::PASSWORD,
+            'password_confirmation' => self::PASSWORD,
         ]);
 
         $users = User::all();
@@ -144,7 +134,7 @@ class RegisterTest extends TestCase
         $response = $this->from(route('register'))->post(route('register'), [
             'name' => 'John Doe',
             'email' => 'john@example.com',
-            'password' => 'i-love-laravel',
+            'password' => self::PASSWORD,
             'password_confirmation' => '',
         ]);
 
@@ -165,8 +155,8 @@ class RegisterTest extends TestCase
         $response = $this->from(route('register'))->post(route('register'), [
             'name' => 'John Doe',
             'email' => 'john@example.com',
-            'password' => 'i-love-laravel',
-            'password_confirmation' => 'i-love-symfony',
+            'password' => self::PASSWORD,
+            'password_confirmation' => 'not-the-same-password',
         ]);
 
         $users = User::all();
@@ -178,5 +168,13 @@ class RegisterTest extends TestCase
         $this->assertTrue(session()->hasOldInput('email'));
         $this->assertFalse(session()->hasOldInput('password'));
         $this->assertGuest();
+    }
+
+    /** @test */
+    public function a_user_cannot_view_the_registration_page()
+    {
+        $this->signIn()
+            ->get(route('register'))
+            ->assertRedirect(RouteServiceProvider::HOME);
     }
 }

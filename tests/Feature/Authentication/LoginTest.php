@@ -1,9 +1,8 @@
 <?php
 
-namespace Tests\Feature\Auth;
+namespace Tests\Feature\Authentication;
 
 use Tests\TestCase;
-use App\Models\User;
 use Illuminate\Support\Facades\Auth;
 use App\Providers\RouteServiceProvider;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -11,6 +10,19 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 class LoginTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected $user;
+
+    public const PASSWORD = 'makers-assemble';
+
+    public function setUp(): void
+    {
+        parent::setUp();
+
+        $this->user = create('User', [
+            'password' => self::PASSWORD
+        ]);
+    }
 
     /** @test */
     public function a_guest_can_view_the_login_page()
@@ -21,30 +33,22 @@ class LoginTest extends TestCase
     }
 
     /** @test */
-    public function a_guest_can_login_with_the_correct_credentials()
+    public function a_guest_can_login_with_correct_credentials()
     {
-        $user = factory(User::class)->create([
-            'password' => $password = 'makers-assemble',
-        ]);
-
         $this->post(route('login'), [
-            'email' => $user->email,
-            'password' => $password,
+            'email' => $this->user->email,
+            'password' => self::PASSWORD,
         ])
             ->assertRedirect(RouteServiceProvider::HOME);
 
-        $this->assertAuthenticatedAs($user);
+        $this->assertAuthenticatedAs($this->user);
     }
 
     /** @test */
     public function a_guest_cannot_login_with_incorrect_credentials()
     {
-        $user = factory(User::class)->create([
-            'password' => 'makers-assemble',
-        ]);
-
         $this->from(route('login'))->post(route('login'), [
-            'email' => $user->email,
+            'email' => $this->user->email,
             'password' => 'invalid-password',
         ])
             ->assertRedirect(route('login'))
@@ -71,24 +75,11 @@ class LoginTest extends TestCase
     }
 
     /** @test */
-    public function a_guest_cannot_logout()
-    {
-        $this->post(route('logout'))
-            ->assertRedirect('/');
-
-        $this->assertGuest();
-    }
-
-    /** @test */
     public function a_guest_cannot_attempt_to_login_more_than_five_times_per_minute()
     {
-        $user = factory(User::class)->create([
-            'password' => $password = 'i-love-laravel',
-        ]);
-
         foreach (range(0, 5) as $_) {
             $response = $this->from(route('login'))->post(route('login'), [
-                'email' => $user->email,
+                'email' => $this->user->email,
                 'password' => 'invalid-password',
             ]);
         }
@@ -114,9 +105,18 @@ class LoginTest extends TestCase
     }
 
     /** @test */
+    public function a_guest_cannot_logout()
+    {
+        $this->post(route('logout'))
+            ->assertRedirect('/');
+
+        $this->assertGuest();
+    }
+
+    /** @test */
     public function a_user_cannot_view_the_login_page()
     {
-        $this->actingAs(factory(User::class)->make())
+        $this->signIn($this->user)
             ->get(route('login'))
             ->assertRedirect(RouteServiceProvider::HOME);
     }
@@ -124,20 +124,21 @@ class LoginTest extends TestCase
     /** @test */
     public function a_user_can_use_the_remember_me_functionality_when_logging_in()
     {
-        $user = factory(User::class)->create([
+        $user = create('User', [
             'id' => random_int(1, 100),
-            'password' => $password = 'i-love-laravel',
+            'password' => self::PASSWORD,
         ]);
 
         $response = $this->post(route('login'), [
             'email' => $user->email,
-            'password' => $password,
+            'password' => self::PASSWORD,
             'remember' => 'on',
         ]);
 
         $user = $user->fresh();
 
-        $response->assertRedirect(RouteServiceProvider::HOME)
+        $response
+            ->assertRedirect(RouteServiceProvider::HOME)
             ->assertCookie(Auth::guard()->getRecallerName(), vsprintf('%s|%s|%s', [
                 $user->id,
                 $user->getRememberToken(),
@@ -150,9 +151,8 @@ class LoginTest extends TestCase
     /** @test */
     public function a_user_can_logout()
     {
-        $this->be(factory(User::class)->create());
-
-        $this->post(route('logout'))
+        $this->signIn($this->user)
+            ->post(route('logout'))
             ->assertRedirect('/');
 
         $this->assertGuest();
