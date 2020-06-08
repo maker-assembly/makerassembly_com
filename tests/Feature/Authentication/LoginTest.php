@@ -33,10 +33,10 @@ class LoginTest extends TestCase
     }
 
     /** @test */
-    public function a_guest_can_login_with_correct_credentials()
+    public function a_guest_can_login_with_the_correct_email_and_password()
     {
         $this->post(route('login'), [
-            'email' => $this->user->email,
+            'identity' => $this->user->email,
             'password' => self::PASSWORD,
         ])
             ->assertRedirect(RouteServiceProvider::HOME);
@@ -45,16 +45,43 @@ class LoginTest extends TestCase
     }
 
     /** @test */
-    public function a_guest_cannot_login_with_incorrect_credentials()
+    public function a_guest_can_login_with_the_correct_username_and_password()
+    {
+        $this->post(route('login'), [
+            'identity' => $this->user->username,
+            'password' => self::PASSWORD,
+        ])
+            ->assertRedirect(RouteServiceProvider::HOME);
+
+        $this->assertAuthenticatedAs($this->user);
+    }
+
+    /** @test */
+    public function a_guest_cannot_login_with_an_email_and_an_incorrect_password()
     {
         $this->from(route('login'))->post(route('login'), [
-            'email' => $this->user->email,
+            'identity' => $this->user->email,
             'password' => 'invalid-password',
         ])
             ->assertRedirect(route('login'))
             ->assertSessionHasErrors('email');
 
-        $this->assertTrue(session()->hasOldInput('email'));
+        $this->assertTrue(session()->hasOldInput('identity'));
+        $this->assertFalse(session()->hasOldInput('password'));
+        $this->assertGuest();
+    }
+
+    /** @test */
+    public function a_guest_cannot_login_with_a_username_and_an_incorrect_password()
+    {
+        $this->from(route('login'))->post(route('login'), [
+            'identity' => $this->user->username,
+            'password' => 'invalid-password',
+        ])
+            ->assertRedirect(route('login'))
+            ->assertSessionHasErrors('username');
+
+        $this->assertTrue(session()->hasOldInput('identity'));
         $this->assertFalse(session()->hasOldInput('password'));
         $this->assertGuest();
     }
@@ -63,13 +90,28 @@ class LoginTest extends TestCase
     public function a_guest_cannot_login_with_an_email_that_does_not_exist()
     {
         $this->from(route('login'))->post(route('login'), [
-            'email' => 'nobody@example.com',
+            'identity' => 'nobody@example.com',
             'password' => 'invalid-password',
         ])
             ->assertRedirect(route('login'))
             ->assertSessionHasErrors('email');
 
-        $this->assertTrue(session()->hasOldInput('email'));
+        $this->assertTrue(session()->hasOldInput('identity'));
+        $this->assertFalse(session()->hasOldInput('password'));
+        $this->assertGuest();
+    }
+
+    /** @test */
+    public function a_guest_cannot_login_with_a_username_that_does_not_exist()
+    {
+        $this->from(route('login'))->post(route('login'), [
+            'identity' => 'mrNobody',
+            'password' => 'invalid-password',
+        ])
+            ->assertRedirect(route('login'))
+            ->assertSessionHasErrors('username');
+
+        $this->assertTrue(session()->hasOldInput('identity'));
         $this->assertFalse(session()->hasOldInput('password'));
         $this->assertGuest();
     }
@@ -79,7 +121,7 @@ class LoginTest extends TestCase
     {
         foreach (range(0, 5) as $_) {
             $response = $this->from(route('login'))->post(route('login'), [
-                'email' => $this->user->email,
+                'identity' => $this->user->email,
                 'password' => 'invalid-password',
             ]);
         }
@@ -99,7 +141,7 @@ class LoginTest extends TestCase
                     ->get('email')
             )->first()
         );
-        $this->assertTrue(session()->hasOldInput('email'));
+        $this->assertTrue(session()->hasOldInput('identity'));
         $this->assertFalse(session()->hasOldInput('password'));
         $this->assertGuest();
     }
@@ -130,7 +172,7 @@ class LoginTest extends TestCase
         ]);
 
         $response = $this->post(route('login'), [
-            'email' => $user->email,
+            'identity' => $user->email,
             'password' => self::PASSWORD,
             'remember' => 'on',
         ]);

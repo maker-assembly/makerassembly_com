@@ -2,7 +2,6 @@
 
 namespace Tests\Feature\Authentication;
 
-use App\Models\User;
 use Tests\TestCase;
 use Illuminate\Support\Facades\URL;
 use App\Providers\RouteServiceProvider;

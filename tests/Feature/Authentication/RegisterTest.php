@@ -30,7 +30,7 @@ class RegisterTest extends TestCase
         Event::fake();
 
         $this->post(route('register'), [
-            'name' => 'John Doe',
+            'username' => 'John Doe',
             'email' => 'john@example.com',
             'password' => self::PASSWORD,
             'password_confirmation' => self::PASSWORD,
@@ -38,7 +38,7 @@ class RegisterTest extends TestCase
             ->assertRedirect(RouteServiceProvider::HOME);
         $this->assertCount(1, $users = User::all());
         $this->assertAuthenticatedAs($user = $users->first());
-        $this->assertEquals('John Doe', $user->name);
+        $this->assertEquals('John Doe', $user->username);
         $this->assertEquals('john@example.com', $user->email);
         $this->assertTrue(Hash::check(self::PASSWORD, $user->password));
         Event::assertDispatched(Registered::class, function ($e) use ($user) {
@@ -47,10 +47,10 @@ class RegisterTest extends TestCase
     }
 
     /** @test */
-    public function a_guest_cannot_register_without_a_name()
+    public function a_guest_cannot_register_without_a_username()
     {
         $response = $this->from(route('register'))->post(route('register'), [
-            'name' => '',
+            'username' => '',
             'email' => 'john@example.com',
             'password' => self::PASSWORD,
             'password_confirmation' => self::PASSWORD,
@@ -60,7 +60,7 @@ class RegisterTest extends TestCase
 
         $this->assertCount(0, $users);
         $response->assertRedirect(route('register'));
-        $response->assertSessionHasErrors('name');
+        $response->assertSessionHasErrors('username');
         $this->assertTrue(session()->hasOldInput('email'));
         $this->assertFalse(session()->hasOldInput('password'));
         $this->assertGuest();
@@ -70,7 +70,7 @@ class RegisterTest extends TestCase
     public function a_guest_cannot_register_without_an_email()
     {
         $response = $this->from(route('register'))->post(route('register'), [
-            'name' => 'John Doe',
+            'username' => 'John Doe',
             'email' => '',
             'password' => self::PASSWORD,
             'password_confirmation' => self::PASSWORD,
@@ -81,7 +81,7 @@ class RegisterTest extends TestCase
         $this->assertCount(0, $users);
         $response->assertRedirect(route('register'));
         $response->assertSessionHasErrors('email');
-        $this->assertTrue(session()->hasOldInput('name'));
+        $this->assertTrue(session()->hasOldInput('username'));
         $this->assertFalse(session()->hasOldInput('password'));
         $this->assertGuest();
     }
@@ -90,7 +90,7 @@ class RegisterTest extends TestCase
     public function a_guest_cannot_register_without_a_valid_email()
     {
         $response = $this->from(route('register'))->post(route('register'), [
-            'name' => 'John Doe',
+            'username' => 'John Doe',
             'email' => 'invalid-email',
             'password' => self::PASSWORD,
             'password_confirmation' => self::PASSWORD,
@@ -101,7 +101,7 @@ class RegisterTest extends TestCase
         $this->assertCount(0, $users);
         $response->assertRedirect(route('register'));
         $response->assertSessionHasErrors('email');
-        $this->assertTrue(session()->hasOldInput('name'));
+        $this->assertTrue(session()->hasOldInput('username'));
         $this->assertTrue(session()->hasOldInput('email'));
         $this->assertFalse(session()->hasOldInput('password'));
         $this->assertGuest();
@@ -111,7 +111,7 @@ class RegisterTest extends TestCase
     public function a_guest_cannot_register_without_a_password()
     {
         $response = $this->from(route('register'))->post(route('register'), [
-            'name' => 'John Doe',
+            'username' => 'John Doe',
             'email' => 'john@example.com',
             'password' => '',
             'password_confirmation' => '',
@@ -122,7 +122,7 @@ class RegisterTest extends TestCase
         $this->assertCount(0, $users);
         $response->assertRedirect(route('register'));
         $response->assertSessionHasErrors('password');
-        $this->assertTrue(session()->hasOldInput('name'));
+        $this->assertTrue(session()->hasOldInput('username'));
         $this->assertTrue(session()->hasOldInput('email'));
         $this->assertFalse(session()->hasOldInput('password'));
         $this->assertGuest();
@@ -132,7 +132,7 @@ class RegisterTest extends TestCase
     public function a_guest_cannot_resiter_without_confirming_their_password()
     {
         $response = $this->from(route('register'))->post(route('register'), [
-            'name' => 'John Doe',
+            'username' => 'John Doe',
             'email' => 'john@example.com',
             'password' => self::PASSWORD,
             'password_confirmation' => '',
@@ -143,7 +143,7 @@ class RegisterTest extends TestCase
         $this->assertCount(0, $users);
         $response->assertRedirect(route('register'));
         $response->assertSessionHasErrors('password');
-        $this->assertTrue(session()->hasOldInput('name'));
+        $this->assertTrue(session()->hasOldInput('username'));
         $this->assertTrue(session()->hasOldInput('email'));
         $this->assertFalse(session()->hasOldInput('password'));
         $this->assertGuest();
@@ -153,7 +153,7 @@ class RegisterTest extends TestCase
     public function a_guest_cannot_register_without_their_password_and_password_confirmation_matching()
     {
         $response = $this->from(route('register'))->post(route('register'), [
-            'name' => 'John Doe',
+            'username' => 'John Doe',
             'email' => 'john@example.com',
             'password' => self::PASSWORD,
             'password_confirmation' => 'not-the-same-password',
@@ -164,7 +164,7 @@ class RegisterTest extends TestCase
         $this->assertCount(0, $users);
         $response->assertRedirect(route('register'));
         $response->assertSessionHasErrors('password');
-        $this->assertTrue(session()->hasOldInput('name'));
+        $this->assertTrue(session()->hasOldInput('username'));
         $this->assertTrue(session()->hasOldInput('email'));
         $this->assertFalse(session()->hasOldInput('password'));
         $this->assertGuest();
