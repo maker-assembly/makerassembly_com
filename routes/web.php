@@ -19,6 +19,10 @@ Auth::routes(['verify' => true]);
 
 Route::get('/home', 'HomeController@index')->name('home');
 
+Route::get('/profiles', 'ProfileController@index')->name('profiles.index');
+Route::get('/profiles/@{user}', 'ProfileController@show')->name('profiles.show');
+Route::patch('/profiles/{user}', 'ProfileController@update')->name('profiles.update');
+
 // Route::get('/community', 'CommunityController')->name('community');
 // Route::get('/community/{category}', 'CategoryController@show')->name('categories.show');
 
