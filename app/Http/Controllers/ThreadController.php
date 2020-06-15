@@ -90,6 +90,17 @@ class ThreadController extends Controller
     public function update(Request $request, Category $category, Thread $thread)
     {
         $this->authorize('update', $thread);
+
+        $this->validateAttributes();
+
+        $thread->update([
+            'category_id' => request('category_id'),
+            'title' => request('title'),
+            'slug' => request('slug'),
+            'body' => request('body')
+        ]);
+
+        return redirect($thread->path());
     }
 
     /**

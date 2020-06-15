@@ -149,4 +149,44 @@ class ThreadsTest extends TestCase
         ]))
             ->assertStatus(403);
     }
+
+    /** @test */
+    public function the_thread_owner_can_edit_their_thread()
+    {
+        $this->signIn($this->thread1->owner);
+
+        $this->get(route('threads.edit', [
+            'category' => $this->thread1->category,
+            'thread' => $this->thread1
+        ]))
+            ->assertStatus(200);
+
+        $response = $this->patch(route('threads.update', [
+            'category' => $this->thread1->category,
+            'thread' => $this->thread1
+        ]), $attributes = raw('Thread'));
+
+        $this->get($response->headers->get('Location'))
+            ->assertStatus(200)
+            ->assertSee($attributes['title']);
+    }
+
+    /** @test */
+    public function the_thread_owner_can_delete_their_thread()
+    {
+        $this->signIn($this->thread1->owner);
+
+        // $this->delete(route('threads.delete', [
+        //     'category' => $this->thread1->category,
+        //     'thread' => $this->thread1
+        // ]))
+        //     ->assertStatus(200);
+
+        $this->delete(route('threads.destroy', [
+            'category' => $this->thread1->category,
+            'thread' => $this->thread1
+        ]))
+            ->assertStatus(200);
+
+    }
 }
