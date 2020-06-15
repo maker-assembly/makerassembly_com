@@ -47,6 +47,16 @@ class ThreadsTest extends TestCase
             ->assertDontSee($this->thread2->title);
     }
 
+    /** @test */
+    public function anyone_can_view_all_threads_by_author()
+    {
+        $this->get(route('threads.index', [
+            'community' => $this->thread1->community,
+            'by' => $this->thread1->owner->username
+        ]))
+            ->assertSee($this->thread1->title)
+            ->assertDontSee($this->thread2->title);
+    }
 
     /** @test */
     public function anyone_can_view_a_single_thread()

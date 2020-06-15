@@ -10,6 +10,16 @@ class Thread extends Model
         'owner_id', 'category_id', 'title', 'slug', 'body'
     ];
 
+    public function getRouteKeyName()
+    {
+        return 'slug';
+    }
+
+    public function scopeFilter($query, $filter)
+    {
+        return $filter->apply($query);
+    }
+
     public function owner()
     {
         return $this->belongsTo('App\Models\User');

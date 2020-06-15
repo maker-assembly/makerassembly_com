@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Thread;
 use App\Models\Category;
 use Illuminate\Http\Request;
+use App\Filters\ThreadFilter;
 
 class ThreadController extends Controller
 {
@@ -19,9 +20,9 @@ class ThreadController extends Controller
      * @param  \App\Models\Category  $category
      * @return \Illuminate\Http\Response
      */
-    public function index(Category $category)
+    public function index(Category $category, ThreadFilter $filter)
     {
-        return $this->getThreads($category);
+        return $this->getThreads($category, $filter);
     }
 
     /**
@@ -130,9 +131,9 @@ class ThreadController extends Controller
         ]);
     }
 
-    protected function getThreads(Category $category)
+    protected function getThreads(Category $category, ThreadFilter $filter)
     {
-        $threads = Thread::latest();
+        $threads = Thread::latest()->filter($filter);
 
         if ($category->exists) {
             $threads->where('category_id', $category->id);
