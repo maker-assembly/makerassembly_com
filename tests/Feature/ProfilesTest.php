@@ -45,7 +45,6 @@ class ProfilesTest extends TestCase
     /** @test */
     public function a_user_can_update_their_profile()
     {
-        $this->withoutExceptionHandling();
         $attributes = [
             'first_name' => $this->faker->firstName(),
             'last_mame' => $this->faker->lastName
