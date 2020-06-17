@@ -30,6 +30,11 @@ class Thread extends Model
         return $this->belongsTo('App\Models\Category');
     }
 
+    public function replies()
+    {
+        return $this->hasMany('App\Models\Reply');
+    }
+
     /**
      * Returns the resource's public path.
      *

@@ -198,5 +198,7 @@ class ThreadsTest extends TestCase
         ]))
             ->assertStatus(200);
 
+        $this->get(route('threads.index'))
+            ->assertDontSee($this->thread1->title);
     }
 }

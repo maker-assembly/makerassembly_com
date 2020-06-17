@@ -123,7 +123,7 @@ class CategoryController extends Controller
     {
         $this->authorize('forceDelete', $category);
 
-        $category->delete();
+        $category->forceDelete();
     }
 
     /**

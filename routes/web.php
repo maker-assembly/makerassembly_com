@@ -39,6 +39,14 @@ Route::prefix('/community')->group(function () {
     Route::get('/{category}/{thread}', 'ThreadController@show')->name('threads.show');
     Route::get('/{category}/{thread}/edit', 'ThreadController@edit')->name('threads.edit');
     Route::patch('/{category}/{thread}', 'ThreadController@update')->name('threads.update');
-    // Route::delete('/{category}/{thread}', 'ThreadController@delete')->name('threads.delete');
+    // Route::delete('/{category}/{thread}/archive', 'ThreadController@delete')->name('threads.delete');
     Route::delete('/{category}/{thread}', 'ThreadController@destroy')->name('threads.destroy');
+
+    Route::get('/{category}/{thread}/replies/create', 'ReplyController@create')->name('replies.create');
+    Route::post('/{category}/{thread}/replies', 'ReplyController@store')->name('replies.store');
+    Route::get('/{category}/{thread}/{reply}', 'ReplyController@show')->name('replies.show');
+    Route::get('/{category}/{thread}/{reply}/edit', 'ReplyController@edit')->name('replies.edit');
+    Route::patch('/{category}/{thread}/{reply}', 'ReplyController@update')->name('replies.update');
+    // Route::delete('/{category}/{thread}/{reply}/archive', 'ReplyController@delete')->name('replies.delete');
+    Route::delete('/{category}/{thread}/{reply}', 'ReplyController@destroy')->name('replies.destroy');
 });
