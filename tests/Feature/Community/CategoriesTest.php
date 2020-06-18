@@ -59,37 +59,45 @@ class CategoriesTest extends TestCase
         $this->get(route('categories.create'))
             ->assertRedirect(route('login'));
 
-        $this->post(
-            route('categories.store'),
-            []
-        )
+        $this->post(route('categories.store'), [])
             ->assertRedirect(route('login'));
     }
 
     /** @test */
     public function a_guest_cannot_edit_a_category()
     {
-        $this->get(route('categories.edit', [
+        $this->get(route('categories.edit', $params = [
             'category' => $this->category
         ]))
             ->assertRedirect(route('login'));
 
-        $this->patch(
-            route('categories.update', [
-                'category' => $this->category
-            ]),
-            []
-        )
+        $this->patch(route('categories.update', $params), [])
             ->assertRedirect(route('login'));
     }
 
     /** @test */
-    public function a_guest_cannot_delete_a_category()
+    public function a_guest_cannot_delete_or_destroy_a_category()
     {
-        $this->delete(route('categories.destroy', [
-            'category' => $this->category
+        $this->delete(route('categories.delete', $params = [
+            'id' => $this->category
         ]))
             ->assertRedirect(route('login'));
+
+        $this->delete(route('categories.destroy', $params))
+            ->assertRedirect(route('login'));
+    }
+
+    /** @test */
+    public function a_guest_cannot_restore_a_category()
+    {
+        $this->category->delete();
+
+        $this->patch(route('categories.restore', [
+            'id' => $this->category->id
+        ]), [])
+            ->assertRedirect(route('login'));
+
+        $this->assertTrue($this->category->fresh()->trashed());
     }
 
     /** @test */
@@ -109,26 +117,42 @@ class CategoriesTest extends TestCase
     {
         $this->signIn();
 
-        $this->get(route('categories.edit', [
+        $this->get(route('categories.edit', $params = [
             'category' => $this->category
         ]))
             ->assertStatus(403);
 
-        $this->patch(route('categories.update', [
-            'category' => $this->category
-        ]), [])
+        $this->patch(route('categories.update', $params), [])
             ->assertStatus(403);
     }
 
     /** @test */
-    public function a_user_cannot_delete_a_category()
+    public function a_user_cannot_delete_or_destroy_a_category()
     {
         $this->signIn();
 
-        $this->delete(route('categories.destroy', [
-            'category' => $this->category
+        $this->delete(route('categories.delete', $params = [
+            'id' => $this->category->id
         ]))
             ->assertStatus(403);
+
+        $this->delete(route('categories.destroy', $params))
+            ->assertStatus(403);
+    }
+
+    /** @test */
+    public function a_user_cannot_restore_a_category()
+    {
+        $this->category->delete();
+
+        $this->signIn();
+
+        $this->patch(route('categories.restore', [
+            'id' => $this->category->id
+        ]), [])
+            ->assertStatus(403);
+
+        $this->assertTrue($this->category->fresh()->trashed());
     }
 
     /** @test */
@@ -139,9 +163,7 @@ class CategoriesTest extends TestCase
         $this->get(route('categories.create'))
             ->assertStatus(200);
 
-        $attributes = raw('Category');
-
-        $response = $this->post(route('categories.store'), $attributes);
+        $response = $this->post(route('categories.store'), $attributes = raw('Category'));
 
         $this->get($response->headers->get('Location'))
             ->assertSee($attributes['name']);
@@ -152,31 +174,53 @@ class CategoriesTest extends TestCase
     {
         $this->signIn($this->moderator);
 
-        $this->get(route('categories.edit', [
+        $this->get(route('categories.edit', $params = [
             'category' => $this->category
         ]))
             ->assertStatus(200);
 
-        $attributes = raw('Category');
-
-        $response = $this->patch(route('categories.update', [
-            'category' => $this->category
-        ]), $attributes);
+        $response = $this->patch(route('categories.update', $params), $attributes = raw('Category'));
 
         $this->get($response->headers->get('Location'))
             ->assertSee($attributes['name']);
     }
 
     /** @test */
-    public function a_moderator_can_delete_categories()
+    public function a_moderator_can_delete_a_category()
+    {
+        $this->signIn($this->moderator);
+
+        $this->delete(route('categories.delete', [
+            'id' => $this->category->id
+        ]))
+            ->assertStatus(200);
+
+        $this->assertTrue($this->category->fresh()->trashed());
+    }
+
+    /** @test */
+    public function a_moderator_can_restore_a_category()
+    {
+        $this->category->delete();
+
+        $this->signIn($this->moderator);
+
+        $this->patch(route('categories.restore', [
+            'id' => $this->category->id
+        ]), []);
+
+        $this->assertFalse($this->category->fresh()->trashed());
+    }
+
+    /** @test */
+    public function a_moderator_can_destroy_a_category()
     {
         $this->signIn($this->moderator);
 
         $this->delete(route('categories.destroy', [
-            'category' => $this->category
+            'id' => $this->category->id
         ]));
 
-        $this->get(route('categories.index'))
-            ->assertDontSee($this->category->name);
+        $this->assertDatabaseMissing('categories', $this->category->toArray());
     }
 }

@@ -89,6 +89,6 @@ class ReplyPolicy
      */
     public function forceDelete(User $user, Reply $reply)
     {
-        return $user->is($reply->owner);
+        return false;
     }
 }

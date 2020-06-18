@@ -39,48 +39,53 @@ class RepliesTest extends TestCase
     /** @test */
     public function a_guest_cannot_create_a_reply()
     {
-        $parameters = [
+        $this->get(route('replies.create', $params = [
             'category' => $this->reply->thread->category,
             'thread' => $this->reply->thread
-        ];
-
-        $this->get(route('replies.create', $parameters))
+        ]))
             ->assertRedirect(route('login'));
 
-        $this->post(route('replies.store', $parameters), [])
+        $this->post(route('replies.store', $params), [])
             ->assertRedirect(route('login'));
     }
 
     /** @test */
     public function a_guest_cannot_edit_a_reply()
     {
-        $parameters = [
+        $this->get(route('replies.edit', $params = [
             'category' => $this->reply->thread->category,
             'thread' => $this->reply->thread,
             'reply' => $this->reply
-        ];
-
-        $this->get(route('replies.edit', $parameters))
+        ]))
             ->assertRedirect(route('login'));
 
-        $this->patch(route('replies.update', $parameters), [])
+        $this->patch(route('replies.update', $params), [])
             ->assertRedirect(route('login'));
     }
 
     /** @test */
-    public function a_guest_cannot_delete_a_reply()
+    public function a_guest_cannot_delete_or_destroy_a_reply()
     {
-        $parameters = [
-            'category' => $this->reply->thread->category,
-            'thread' => $this->reply->thread,
-            'reply' => $this->reply
-        ];
-
-        // $this->delete(route('replies.delete', $parameters))
-        //     ->assertRedirect(route('login'));
-
-        $this->delete(route('replies.destroy', $parameters))
+        $this->delete(route('replies.delete', $params = [
+            'id' => $this->reply->id
+        ]))
             ->assertRedirect(route('login'));
+
+        $this->delete(route('replies.destroy', $params))
+            ->assertRedirect(route('login'));
+    }
+
+    /** @test */
+    public function a_guest_cannot_restore_a_reply()
+    {
+        $this->reply->delete();
+
+        $this->patch(route('replies.restore', [
+            'id' => $this->reply->id
+        ]))
+            ->assertRedirect(route('login'));
+
+        $this->assertTrue($this->reply->fresh()->trashed());
     }
 
     /** @test */
@@ -88,15 +93,13 @@ class RepliesTest extends TestCase
     {
         $this->signIn();
 
-        $parameters = [
+        $this->get(route('replies.create', $params = [
             'category' => $this->reply->thread->category,
             'thread' => $this->reply->thread
-        ];
-
-        $this->get(route('replies.create', $parameters))
+        ]))
             ->assertStatus(200);
 
-        $response = $this->post(route('replies.store', $parameters), $attributes = raw('Reply'));
+        $response = $this->post(route('replies.store', $params), $attributes = raw('Reply'));
 
         $this->get($response->headers->get('Location'))
             ->assertSee($attributes['body']);
@@ -107,35 +110,44 @@ class RepliesTest extends TestCase
     {
         $this->signIn();
 
-        $parameters = [
+        $this->get(route('replies.edit', $params = [
             'category' => $this->reply->thread->category,
             'thread' => $this->reply->thread,
             'reply' => $this->reply,
-        ];
-
-        $this->get(route('replies.edit', $parameters))
+        ]))
             ->assertStatus(403);
 
-        $this->patch(route('replies.update', $parameters))
+        $this->patch(route('replies.update', $params))
             ->assertStatus(403);
     }
 
     /** @test */
-    public function a_user_cannot_delete_a_reply()
+    public function a_user_cannot_delete_or_destroy_a_reply()
     {
         $this->signIn();
 
-        $parameters = [
-            'category' => $this->reply->thread->category,
-            'thread' => $this->reply->thread,
-            'reply' => $this->reply,
-        ];
-
-        // $this->delete(route('replies.delete', $parameters))
-        //     ->assertStatus(403);
-
-        $this->delete(route('replies.destroy', $parameters))
+        $this->delete(route('replies.delete', $params = [
+            'id' => $this->reply->id,
+        ]))
             ->assertStatus(403);
+
+        $this->delete(route('replies.destroy', $params))
+            ->assertStatus(403);
+    }
+
+    /** @test */
+    public function a_user_cannot_restore_a_reply()
+    {
+        $this->reply->delete();
+
+        $this->signIn();
+
+        $this->patch(route('replies.restore', [
+            'id' => $this->reply->id
+        ]))
+            ->assertStatus(403);
+
+        $this->assertTrue($this->reply->fresh()->trashed());
     }
 
     /** @test */
@@ -143,16 +155,14 @@ class RepliesTest extends TestCase
     {
         $this->signIn($this->reply->owner);
 
-        $parameters = [
+        $this->get(route('replies.edit', $params = [
             'category' => $this->reply->thread->category,
             'thread' => $this->reply->thread,
             'reply' => $this->reply,
-        ];
-
-        $this->get(route('replies.edit', $parameters))
+        ]))
             ->assertStatus(200);
 
-        $response = $this->patch(route('replies.update', $parameters), $attributes = raw('Reply'));
+        $response = $this->patch(route('replies.update', $params), $attributes = raw('Reply'));
 
         $this->get($response->headers->get('Location'))
             ->assertSee($attributes['body']);
@@ -163,19 +173,38 @@ class RepliesTest extends TestCase
     {
         $this->signIn($this->reply->owner);
 
-        $parameters = [
-            'category' => $this->reply->thread->category,
-            'thread' => $this->reply->thread,
-            'reply' => $this->reply,
-        ];
-
-        // $this->delete(route('replies.delete', $parameters))
-        //     ->assertStatus(200);
-
-        $this->delete(route('replies.destroy', $parameters))
+        $this->delete(route('replies.delete', [
+            'id' => $this->reply->id,
+        ]))
             ->assertStatus(200);
 
-        $this->get(route('threads.show', $parameters))
-            ->assertDontSee($this->reply->body);
+        $this->assertTrue($this->reply->fresh()->trashed());
+    }
+
+    /** @test */
+    public function the_reply_owner_can_restore_their_reply()
+    {
+        $this->signIn($this->reply->owner);
+
+        $this->reply->delete();
+
+        $this->patch(route('replies.restore', [
+            'id' => $this->reply->id
+        ]), []);
+
+        $this->assertFalse($this->reply->fresh()->trashed());
+    }
+
+    /** @test */
+    public function the_reply_owner_cannot_destroy_their_reply()
+    {
+        $this->signIn($this->reply->owner);
+
+        $this->delete(route('replies.destroy', [
+            'id' => $this->reply->id
+        ]))
+            ->assertStatus(403);
+
+        $this->assertDatabaseHas('replies', ['id' => $this->reply->id]);
     }
 }

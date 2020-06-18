@@ -89,6 +89,6 @@ class ThreadPolicy
      */
     public function forceDelete(User $user, Thread $thread)
     {
-        return $user->is($thread->owner);
+        return false;
     }
 }

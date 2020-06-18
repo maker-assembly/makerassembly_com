@@ -21,6 +21,7 @@ class CreateThreadsTable extends Migration
             $table->string('slug');
             $table->text('body');
             $table->timestamps();
+            $table->softDeletes();
 
             $table->foreign('owner_id')
                 ->references('id')

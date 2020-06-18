@@ -107,24 +107,48 @@ class ThreadController extends Controller
     /**
      * Soft delete the specified resource in storage.
      *
-     * @param  \App\Models\Category  $category
-     * @param  \App\Models\Thread  $thread
+     * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function delete(Category $category, Thread $thread)
+    public function delete($id)
     {
+        $thread = Thread::where('id', $id)
+            ->first();
+
         $this->authorize('delete', $thread);
+
+        $thread->delete();
+    }
+
+    /**
+     * Restore the specified resource in storage.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function restore($id)
+    {
+        $thread = Thread::onlyTrashed()
+            ->where('id', $id)
+            ->first();
+
+        $this->authorize('restore', $thread);
+
+        $thread->restore();
     }
 
     /**
      * Remove the specified resource from storage.
      *
-     * @param  \App\Models\Category  $category
-     * @param  \App\Models\Thread  $thread
+     * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy(Category $category, Thread $thread)
+    public function destroy($id)
     {
+        $thread = Thread::withTrashed()
+            ->where('id', $id)
+            ->first();
+
         $this->authorize('forceDelete', $thread);
 
         $thread->forceDelete();

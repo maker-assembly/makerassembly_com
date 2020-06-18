@@ -3,9 +3,17 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Reply extends Model
 {
+    use SoftDeletes;
+
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array
+     */
     protected $fillable = ['owner_id', 'body'];
 
     public function owner()
@@ -18,6 +26,11 @@ class Reply extends Model
         return $this->belongsTo('App\Models\Thread');
     }
 
+    /**
+     * Returns the resource's public path.
+     *
+     * @return string
+     */
     public function path()
     {
         return route('replies.show', [

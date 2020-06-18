@@ -19,6 +19,7 @@ class CreateRepliesTable extends Migration
             $table->unsignedBigInteger('thread_id');
             $table->text('body');
             $table->timestamps();
+            $table->softDeletes();
 
             $table->foreign('owner_id')
                 ->references('id')

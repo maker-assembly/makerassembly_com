@@ -82,31 +82,41 @@ class ThreadsTest extends TestCase
     /** @test */
     public function a_guest_cannot_edit_a_thread()
     {
-        $parameters = [
+        $params = [
             'category' => $this->thread1->category,
             'thread' => $this->thread1
         ];
 
-        $this->get(route('threads.edit', $parameters))
+        $this->get(route('threads.edit', $params))
             ->assertRedirect(route('login'));
 
-        $this->patch(route('threads.update', $parameters), [])
+        $this->patch(route('threads.update', $params), [])
             ->assertRedirect(route('login'));
     }
 
     /** @test */
-    public function a_guest_cannot_delete_a_thread()
+    public function a_guest_cannot_delete_or_destroy_a_thread()
     {
-        $parameters = [
-            'category' => $this->thread1->category,
-            'thread' => $this->thread1
-        ];
-
-        // $this->delete(route('threads.delete', $parameters))
-        //     ->assertRedirect(route('login'));
-
-        $this->delete(route('threads.destroy', $parameters))
+        $this->delete(route('threads.delete', $params = [
+            'id' => $this->thread1->id
+        ]))
             ->assertRedirect(route('login'));
+
+        $this->delete(route('threads.destroy', $params))
+            ->assertRedirect(route('login'));
+    }
+
+    /** @test */
+    public function a_guest_cannot_restore_a_thread()
+    {
+        $this->thread1->delete();
+
+        $this->patch(route('threads.restore', [
+            'id' => $this->thread1->id
+        ]), [])
+            ->assertRedirect(route('login'));
+
+        $this->assertTrue($this->thread1->fresh()->trashed());
     }
 
     /** @test */
@@ -128,36 +138,44 @@ class ThreadsTest extends TestCase
     {
         $this->signIn();
 
-        $this->get(route('threads.edit', [
+        $this->get(route('threads.edit', $params = [
             'category' => $this->thread1->category,
             'thread' => $this->thread1
         ]))
             ->assertStatus(403);
 
-        $this->patch(route('threads.update', [
-            'category' => $this->thread1->category,
-            'thread' => $this->thread1
-        ]), [])
+        $this->patch(route('threads.update', $params), [])
             ->assertStatus(403);
 
     }
 
     /** @test */
-    public function a_user_cannot_delete_a_thread()
+    public function a_user_cannot_delete_or_destroy_a_thread()
     {
         $this->signIn();
 
-        // $this->delete(route('threads.delete', [
-        //     'category' => $this->thread1->category,
-        //     'thread' => $this->thread1
-        // ]))
-        //     ->assertStatus(403);
-
-        $this->delete(route('threads.destroy', [
-            'category' => $this->thread1->category,
-            'thread' => $this->thread1
+        $this->delete(route('threads.delete', $params = [
+            'id' => $this->thread1->id
         ]))
             ->assertStatus(403);
+
+        $this->delete(route('threads.destroy', $params))
+            ->assertStatus(403);
+    }
+
+    /** @test */
+    public function a_user_cannot_restore_a_thread()
+    {
+        $this->thread1->delete();
+
+        $this->signIn();
+
+        $this->patch(route('threads.restore', [
+            'id' => $this->thread1->id
+        ]), [])
+            ->assertStatus(403);
+
+        $this->assertTrue($this->thread1->fresh()->trashed());
     }
 
     /** @test */
@@ -165,16 +183,13 @@ class ThreadsTest extends TestCase
     {
         $this->signIn($this->thread1->owner);
 
-        $this->get(route('threads.edit', [
+        $this->get(route('threads.edit', $params = [
             'category' => $this->thread1->category,
             'thread' => $this->thread1
         ]))
             ->assertStatus(200);
 
-        $response = $this->patch(route('threads.update', [
-            'category' => $this->thread1->category,
-            'thread' => $this->thread1
-        ]), $attributes = raw('Thread'));
+        $response = $this->patch(route('threads.update', $params), $attributes = raw('Thread'));
 
         $this->get($response->headers->get('Location'))
             ->assertStatus(200)
@@ -186,19 +201,38 @@ class ThreadsTest extends TestCase
     {
         $this->signIn($this->thread1->owner);
 
-        // $this->delete(route('threads.delete', [
-        //     'category' => $this->thread1->category,
-        //     'thread' => $this->thread1
-        // ]))
-        //     ->assertStatus(200);
-
-        $this->delete(route('threads.destroy', [
-            'category' => $this->thread1->category,
-            'thread' => $this->thread1
+        $this->delete(route('threads.delete', [
+            'id' => $this->thread1->id
         ]))
             ->assertStatus(200);
 
-        $this->get(route('threads.index'))
-            ->assertDontSee($this->thread1->title);
+        $this->assertTrue($this->thread1->fresh()->trashed());
+    }
+
+    /** @test */
+    public function the_thread_owner_can_restore_their_thread()
+    {
+        $this->thread1->delete();
+
+        $this->signIn($this->thread1->owner);
+
+        $this->patch(route('threads.restore', [
+            'id' => $this->thread1->id
+        ]), []);
+
+        $this->assertFalse($this->thread1->fresh()->trashed());
+    }
+
+    /** @test */
+    public function the_thread_owner_cannot_destroy_their_reply()
+    {
+        $this->signIn($this->thread1->owner);
+
+        $this->delete(route('threads.destroy', [
+            'id' => $this->thread1->id
+        ]))
+            ->assertStatus(403);
+
+        $this->assertDatabaseHas('threads', ['id' => $this->thread1->id]);
     }
 }

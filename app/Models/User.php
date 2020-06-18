@@ -112,9 +112,9 @@ class User extends Authenticatable implements MustVerifyEmail
     }
 
     /**
-     * Undocumented function
+     * Returns the resource's public path.
      *
-     * @return void
+     * @return string
      */
     public function path()
     {

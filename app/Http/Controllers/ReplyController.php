@@ -105,26 +105,47 @@ class ReplyController extends Controller
     /**
      * Soft delete the specified resource in storage.
      *
-     * @param  \App\Models\Category  $category
-     * @param  \App\Models\Thread  $thread
-     * @param  \App\Models\Reply  $reply
+     * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function delete(Category $category, Thread $thread, Reply $reply)
+    public function delete($id)
     {
+        $reply = Reply::where('id', $id)
+            ->first();
+
         $this->authorize('delete', $reply);
+
+        $reply->delete();
+    }
+
+    /**
+     * Restore the specified resource in storage.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function restore($id)
+    {
+        $reply = Reply::onlyTrashed()
+            ->where('id', $id)
+            ->first();
+
+        $this->authorize('restore', $reply);
+
+        $reply->restore();
     }
 
     /**
      * Remove the specified resource from storage.
      *
-     * @param  \App\Models\Category  $category
-     * @param  \App\Models\Thread  $thread
-     * @param  \App\Models\Reply  $reply
+     * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function destroy(Category $category, Thread $thread, Reply $reply)
+    public function destroy($id)
     {
+        $reply = Reply::withTrashed()
+            ->where('id', $id)
+            ->first();
         $this->authorize('forceDelete', $reply);
 
         $reply->forceDelete();
