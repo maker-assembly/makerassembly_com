@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Reply;
 use App\Models\Thread;
 use App\Models\Category;
 use Illuminate\Http\Request;
-use App\Filters\ThreadFilter;
 
-class ThreadController extends Controller
+class ReplyController extends Controller
 {
     public function __construct()
     {
@@ -17,12 +17,11 @@ class ThreadController extends Controller
     /**
      * Display a listing of the resource.
      *
-     * @param  \App\Models\Category  $category
      * @return \Illuminate\Http\Response
      */
-    public function index(Category $category, ThreadFilter $filter)
+    public function index()
     {
-        return $this->getThreads($category, $filter);
+        //
     }
 
     /**
@@ -39,21 +38,20 @@ class ThreadController extends Controller
      * Store a newly created resource in storage.
      *
      * @param  \Illuminate\Http\Request  $request
+     * @param  \App\Models\Category  $category
+     * @param  \App\Models\Thread  $thread
      * @return \Illuminate\Http\Response
      */
-    public function store(Request $request)
+    public function store(Request $request, Category $category, Thread $thread)
     {
         $this->validateAttributes();
 
-        $thread = Thread::create([
-            'owner_id' => auth()->user()->id,
-            'category_id' => request('category_id'),
-            'title' => request('title'),
-            'slug' => request('slug'),
-            'body' => request('body')
+        $reply = $thread->replies()->create([
+            'owner_id' => auth()->id(),
+            'body' => request('body'),
         ]);
 
-        return redirect($thread->path());
+        return redirect($reply->path());
     }
 
     /**
@@ -61,11 +59,12 @@ class ThreadController extends Controller
      *
      * @param  \App\Models\Category  $category
      * @param  \App\Models\Thread  $thread
+     * @param  \App\Models\Reply  $reply
      * @return \Illuminate\Http\Response
      */
-    public function show(Category $category, Thread $thread)
+    public function show(Category $category, Thread $thread, Reply $reply)
     {
-        return $thread->load('replies');
+        return $reply;
     }
 
     /**
@@ -73,11 +72,12 @@ class ThreadController extends Controller
      *
      * @param  \App\Models\Category  $category
      * @param  \App\Models\Thread  $thread
+     * @param  \App\Models\Reply  $reply
      * @return \Illuminate\Http\Response
      */
-    public function edit(Category $category, Thread $thread)
+    public function edit(Category $category, Thread $thread, Reply $reply)
     {
-        $this->authorize('update', $thread);
+        $this->authorize('update', $reply);
     }
 
     /**
@@ -86,22 +86,20 @@ class ThreadController extends Controller
      * @param  \Illuminate\Http\Request  $request
      * @param  \App\Models\Category  $category
      * @param  \App\Models\Thread  $thread
+     * @param  \App\Models\Reply  $reply
      * @return \Illuminate\Http\Response
      */
-    public function update(Request $request, Category $category, Thread $thread)
+    public function update(Request $request, Category $category, Thread $thread, Reply $reply)
     {
-        $this->authorize('update', $thread);
+        $this->authorize('update', $reply);
 
         $this->validateAttributes();
 
-        $thread->update([
-            'category_id' => request('category_id'),
-            'title' => request('title'),
-            'slug' => request('slug'),
-            'body' => request('body')
+        $reply->update([
+            'body' => request('body'),
         ]);
 
-        return redirect($thread->path());
+        return redirect($reply->path());
     }
 
     /**
@@ -112,12 +110,12 @@ class ThreadController extends Controller
      */
     public function delete($id)
     {
-        $thread = Thread::where('id', $id)
+        $reply = Reply::where('id', $id)
             ->first();
 
-        $this->authorize('delete', $thread);
+        $this->authorize('delete', $reply);
 
-        $thread->delete();
+        $reply->delete();
     }
 
     /**
@@ -128,13 +126,13 @@ class ThreadController extends Controller
      */
     public function restore($id)
     {
-        $thread = Thread::onlyTrashed()
+        $reply = Reply::onlyTrashed()
             ->where('id', $id)
             ->first();
 
-        $this->authorize('restore', $thread);
+        $this->authorize('restore', $reply);
 
-        $thread->restore();
+        $reply->restore();
     }
 
     /**
@@ -145,13 +143,12 @@ class ThreadController extends Controller
      */
     public function destroy($id)
     {
-        $thread = Thread::withTrashed()
+        $reply = Reply::withTrashed()
             ->where('id', $id)
             ->first();
+        $this->authorize('forceDelete', $reply);
 
-        $this->authorize('forceDelete', $thread);
-
-        $thread->forceDelete();
+        $reply->forceDelete();
     }
 
     /**
@@ -162,21 +159,7 @@ class ThreadController extends Controller
     public function validateAttributes()
     {
         request()->validate([
-            'category_id' => ['required', 'integer', 'exists:App\Models\Category,id'],
-            'title' => ['required', 'string'],
-            'slug' => ['required', 'alpha_dash'],
             'body' => ['required', 'string']
         ]);
-    }
-
-    protected function getThreads(Category $category, ThreadFilter $filter)
-    {
-        $threads = Thread::latest()->filter($filter);
-
-        if ($category->exists) {
-            $threads->where('category_id', $category->id);
-        }
-
-        return $threads->paginate(25);
     }
 }

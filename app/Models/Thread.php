@@ -3,13 +3,26 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Thread extends Model
 {
+    use SoftDeletes;
+
+    /**
+     * The attributes that are mass assignable.
+     *
+     * @var array
+     */
     protected $fillable = [
         'owner_id', 'category_id', 'title', 'slug', 'body'
     ];
 
+    /**
+     * Get the route key for the model.
+     *
+     * @return string
+     */
     public function getRouteKeyName()
     {
         return 'slug';
@@ -30,10 +43,15 @@ class Thread extends Model
         return $this->belongsTo('App\Models\Category');
     }
 
+    public function replies()
+    {
+        return $this->hasMany('App\Models\Reply');
+    }
+
     /**
      * Returns the resource's public path.
      *
-     * @return void
+     * @return string
      */
     public function path()
     {

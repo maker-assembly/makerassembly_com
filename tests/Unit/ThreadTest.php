@@ -34,6 +34,20 @@ class ThreadTest extends TestCase
     }
 
     /** @test */
+    public function it_can_be_deleted_and_restored()
+    {
+        $thread = create('Thread');
+
+        $thread->delete();
+
+        $this->assertTrue($thread->trashed());
+
+        $thread->restore();
+
+        $this->assertFalse($thread->trashed());
+    }
+
+    /** @test */
     public function it_can_return_its_path()
     {
         $thread = create('Thread');

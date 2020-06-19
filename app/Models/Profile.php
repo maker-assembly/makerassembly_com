@@ -7,7 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 class Profile extends Model
 {
     /**
-     * Undocumented variable
+     * The attributes that are mass assignable.
      *
      * @var array
      */

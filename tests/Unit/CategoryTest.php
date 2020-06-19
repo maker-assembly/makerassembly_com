@@ -22,6 +22,20 @@ class CategoryTest extends TestCase
     }
 
     /** @test */
+    public function it_can_be_deleted_and_restored()
+    {
+        $category = create('Category');
+
+        $category->delete();
+
+        $this->assertTrue($category->trashed());
+
+        $category->restore();
+
+        $this->assertFalse($category->trashed());
+    }
+
+    /** @test */
     public function it_can_return_its_path()
     {
         $category = create('Category');

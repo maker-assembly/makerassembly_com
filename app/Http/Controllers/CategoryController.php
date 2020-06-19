@@ -105,12 +105,34 @@ class CategoryController extends Controller
     /**
      * Soft delete the specified resource in storage.
      *
-     * @param  \App\Models\Category  $category
+     * @param  int  $id
      * @return \Illuminate\Http\Response
      */
-    public function delete(Category $category)
+    public function delete($id)
     {
+        $category = Category::where('id', $id)
+            ->first();
+
         $this->authorize('delete', $category);
+
+        $category->delete();
+    }
+
+    /**
+     * Restore the specified resource in storage.
+     *
+     * @param  int  $id
+     * @return \Illuminate\Http\Response
+     */
+    public function restore($id)
+    {
+        $category = Category::onlyTrashed()
+            ->where('id', $id)
+            ->first();
+
+        $this->authorize('restore', $category);
+
+        $category->restore();
     }
 
     /**
@@ -123,7 +145,7 @@ class CategoryController extends Controller
     {
         $this->authorize('forceDelete', $category);
 
-        $category->delete();
+        $category->forceDelete();
     }
 
     /**
