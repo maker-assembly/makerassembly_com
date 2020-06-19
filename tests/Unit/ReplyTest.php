@@ -34,6 +34,20 @@ class ReplyTest extends TestCase
     }
 
     /** @test */
+    public function it_can_be_deleted_and_restored()
+    {
+        $reply = create('Reply');
+
+        $reply->delete();
+
+        $this->assertTrue($reply->trashed());
+
+        $reply->restore();
+
+        $this->assertFalse($reply->trashed());
+    }
+
+    /** @test */
     public function it_can_return_its_path()
     {
         $reply = create('Reply');
